@@ -1,0 +1,6 @@
+def poi_search(city: str, tags: list[str] | None = None, bbox=None, center=None, radius=None) -> list[POI]:
+    ...
+
+def get_open_hours(poi_id_or_name: str, city: str) -> dict:
+    # return {"mon":[["09:00","17:00"]], ..., "tz":"America/New_York"}
+    ...
