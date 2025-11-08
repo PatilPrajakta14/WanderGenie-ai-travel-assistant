@@ -1,38 +1,53 @@
+import { useEffect, useMemo, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import Map, { Marker, NavigationControl, Popup } from "react-map-gl/mapbox";
 import trip from "../data/sampleTrip.json";
-import { useMemo, useState } from "react";
 
 const MAPBOX_TOKEN =
-  process.env.REACT_APP_MAPBOX_TOKEN ?? "YOUR_MAPBOX_ACCESS_TOKEN"; // Replace with token
+  process.env.REACT_APP_MAPBOX_TOKEN ?? "YOUR_MAPBOX_ACCESS_TOKEN";
 
-export default function MapView() {
+type MapViewProps = {
+  isActive: boolean;
+};
+
+export default function MapView({ isActive }: MapViewProps) {
   const [selected, setSelected] = useState<any>(null);
-  const points = useMemo(
+  const allPoints = useMemo(
     () => trip.days.flatMap((d) => d.activities),
     []
   );
+  const points = isActive ? allPoints : [];
+
+  useEffect(() => {
+    if (!isActive) setSelected(null);
+  }, [isActive]);
+
+  const initialViewState = isActive
+    ? { longitude: -73.9857, latitude: 40.7484, zoom: 11 }
+    : { longitude: 0, latitude: 20, zoom: 1.2 };
 
   return (
     <div className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70 shadow-2xl">
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-indigo-600/10 via-transparent to-fuchsia-500/10" />
       <div className="absolute left-6 top-6 z-10 rounded-2xl bg-white/90 p-4 text-slate-900 shadow-lg">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-500">
-          Live map
+          {isActive ? "Live map" : "World view"}
         </p>
         <p className="text-base font-semibold">
-          Tap a pin to preview each moment
+          {isActive
+            ? "Tap a pin to preview each moment"
+            : "Start a chat to drop curated pins"}
         </p>
       </div>
       <Map
         reuseMaps
         mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={{
-          longitude: -73.9857,
-          latitude: 40.7484,
-          zoom: 11,
-        }}
-        mapStyle="mapbox://styles/mapbox/light-v11"
+        initialViewState={initialViewState}
+        mapStyle={
+          isActive
+            ? "mapbox://styles/mapbox/light-v11"
+            : "mapbox://styles/mapbox/dark-v11"
+        }
         style={{ height: 420 }}
       >
         <NavigationControl position="top-right" />
@@ -49,7 +64,7 @@ export default function MapView() {
             />
           </Marker>
         ))}
-        {selected && (
+        {isActive && selected && (
           <Popup
             longitude={selected.lon}
             latitude={selected.lat}

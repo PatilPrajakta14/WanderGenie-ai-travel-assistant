@@ -8,7 +8,12 @@ const SUGGESTIONS = [
   "Find hidden cocktail bars",
 ];
 
-export default function ChatPanel() {
+type ChatPanelProps = {
+  onPlan?: (prompt: string) => void;
+  isPlanning?: boolean;
+};
+
+export default function ChatPanel({ onPlan, isPlanning }: ChatPanelProps) {
   const [prompt, setPrompt] = useState("");
 
   const isDisabled = prompt.trim().length === 0;
@@ -26,7 +31,7 @@ export default function ChatPanel() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isDisabled) return;
-    console.log("User prompt:", prompt);
+    onPlan?.(prompt.trim());
     setPrompt("");
   };
 
@@ -82,10 +87,10 @@ export default function ChatPanel() {
 
         <button
           type="submit"
-          disabled={isDisabled}
+          disabled={isDisabled || isPlanning}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-500 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:gap-3 disabled:cursor-not-allowed disabled:opacity-60 md:w-48"
         >
-          Send plan
+          {isPlanning ? "Planning..." : "Send plan"}
           <PaperAirplaneIcon className="h-5 w-5" />
         </button>
       </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ChatPanel from "../components/ChatPanel";
 import ItineraryTimeline from "../components/ItineraryTimeline";
 import MapView from "../components/MapView";
@@ -31,11 +32,31 @@ const highlights = [
 
 const hotelsLink = buildHotelsLink(trip);
 const flightsLink = buildFlightsLink(trip);
-const heroTitle = trip.origin
-  ? `${trip.origin} → ${trip.city}`
-  : trip.city;
 
 export default function Home() {
+  const [hasPlan, setHasPlan] = useState(false);
+  const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+  const [isPlanning, setIsPlanning] = useState(false);
+
+  const heroTitle = hasPlan
+    ? trip.origin
+      ? `${trip.origin} → ${trip.city}`
+      : trip.city
+    : "Let's design your next escape";
+
+  const heroSubtitle = hasPlan
+    ? "Blend iconic highlights with local secrets. Fine-tune every day with AI co-planning, live maps, and calendar-ready exports."
+    : "Describe the mood, travel pace, or dream experiences above and WanderGenie will craft the rest.";
+
+  const handlePlan = (prompt: string) => {
+    setIsPlanning(true);
+    setLastPrompt(prompt);
+    setTimeout(() => {
+      setHasPlan(true);
+      setIsPlanning(false);
+    }, 600);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="pointer-events-none absolute inset-0">
@@ -49,79 +70,154 @@ export default function Home() {
             Live itinerary · Updated in seconds
           </div>
           <div>
-            <p className="text-sm uppercase tracking-[0.5em] text-indigo-200">
+            <p className="text-xl font-black uppercase tracking-[0.6em] text-white">
               WanderGenie
             </p>
-            <h1 className="mt-3 text-4xl font-black leading-tight text-white sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-black leading-tight text-white sm:text-4xl">
               {heroTitle}
             </h1>
             <p className="mt-4 text-lg text-slate-300">
-              Blend iconic highlights with local secrets. Fine-tune every day
-              with AI co-planning, live maps, and calendar-ready exports.
+              {lastPrompt && hasPlan
+                ? `Dialed in for: “${lastPrompt}”`
+                : heroSubtitle}
             </p>
           </div>
         </header>
 
+        <div className="mt-8">
+          <ChatPanel onPlan={handlePlan} isPlanning={isPlanning} />
+        </div>
+
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
-          {highlights.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-3xl border border-white/10 bg-white/5 p-4 text-left shadow-lg backdrop-blur"
-            >
-              <p className="text-xs uppercase tracking-[0.3em] text-white/70">
-                {item.label}
-              </p>
-              <p className="mt-2 text-xl font-semibold text-white">
-                {item.value}
-              </p>
-            </div>
-          ))}
+          {hasPlan
+            ? highlights.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-3xl border border-white/10 bg-white/5 p-4 text-left shadow-lg backdrop-blur"
+                >
+                  <p className="text-xs uppercase tracking-[0.3em] text-white/70">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-white">
+                    {item.value}
+                  </p>
+                </div>
+              ))
+            : [
+                {
+                  title: "Origin city",
+                  description: "Tell us where you're starting from.",
+                },
+                {
+                  title: "Dream destination",
+                  description: "Share the city, vibe, or region.",
+                },
+                {
+                  title: "Trip window",
+                  description: "Rough dates or season help us pace it.",
+                },
+              ].map((card) => (
+                <EmptyStateCard
+                  key={card.title}
+                  title={card.title}
+                  description={card.description}
+                />
+              ))}
           <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-orange-500 to-pink-500 p-4 text-left shadow-xl">
             <p className="text-xs uppercase tracking-[0.3em] text-white/70">
               Instant actions
             </p>
-            <div className="mt-3 space-y-2">
-              <a
-                href={flightsLink.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full flex-col rounded-2xl bg-white/20 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/30"
-              >
-                <span className="text-xs uppercase tracking-[0.3em] text-white/80">
-                  Flights
-                </span>
-                <span className="text-base">
-                  {trip.city} · {flightsLink.window}
-                </span>
-              </a>
-              <a
-                href={hotelsLink.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full flex-col rounded-2xl bg-white/20 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/30"
-              >
-                <span className="text-xs uppercase tracking-[0.3em] text-white/80">
-                  Stays
-                </span>
-                <span className="text-base">
-                  Near {hotelsLink.landmark}
-                </span>
-              </a>
-            </div>
+            {hasPlan ? (
+              <div className="mt-3 space-y-2">
+                <a
+                  href={flightsLink.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex w-full flex-col rounded-2xl bg-white/20 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/30"
+                >
+                  <span className="text-xs uppercase tracking-[0.3em] text-white/80">
+                    Flights
+                  </span>
+                  <span className="text-base">
+                    {trip.city} · {flightsLink.window}
+                  </span>
+                </a>
+                <a
+                  href={hotelsLink.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex w-full flex-col rounded-2xl bg-white/20 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/30"
+                >
+                  <span className="text-xs uppercase tracking-[0.3em] text-white/80">
+                    Stays
+                  </span>
+                  <span className="text-base">
+                    Near {hotelsLink.landmark}
+                  </span>
+                </a>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-white/80">
+                We will drop flight and stay shortcuts once the itinerary is
+                generated.
+              </p>
+            )}
           </div>
         </section>
 
         <section className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <ChatPanel />
-            <ItineraryTimeline />
+            {hasPlan ? (
+              <ItineraryTimeline />
+            ) : (
+              <EmptyStatePanel
+                title="Your itinerary will appear here"
+                description="Kick off a chat to unlock day-by-day schedules, bookings, and pacing suggestions."
+              />
+            )}
           </div>
           <div className="space-y-6">
-            <MapView />
-            <CalendarButton />
+            <MapView isActive={hasPlan} />
+            {hasPlan ? (
+              <CalendarButton />
+            ) : (
+              <EmptyStatePanel
+                title="Calendar export unlocks later"
+                description="Once WanderGenie drafts a trip, you'll be able to push it to Google or Outlook."
+              />
+            )}
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+type EmptyProps = {
+  title: string;
+  description: string;
+};
+
+function EmptyStatePanel({ title, description }: EmptyProps) {
+  return (
+    <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-6 text-left text-white/80">
+      <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">
+        Waiting on copilot
+      </p>
+      <h3 className="mt-2 text-xl font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-sm text-white/70">{description}</p>
+    </div>
+  );
+}
+
+function EmptyStateCard({ title, description }: EmptyProps) {
+  return (
+    <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-4 text-left text-white/70">
+      <p className="text-xs uppercase tracking-[0.3em] text-white/50">
+        Awaiting prompt
+      </p>
+      <p className="mt-2 text-lg font-semibold text-white">{title}</p>
+      <p className="text-sm">{description}</p>
     </div>
   );
 }
