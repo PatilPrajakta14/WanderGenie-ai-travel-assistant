@@ -1,9 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  MicrophoneIcon,
-  PaperAirplaneIcon,
-  SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, SparklesIcon } from "@heroicons/react/24/outline";
 
 const SUGGESTIONS = [
   "Plan a foodie tour in Queens",
@@ -70,7 +66,7 @@ export default function ChatPanel() {
         ))}
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 md:flex-row">
+      <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-end">
         <div className="flex-1 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 focus-within:border-indigo-500 dark:border-slate-700 dark:bg-slate-800/60">
           <textarea
             value={prompt}
@@ -84,24 +80,14 @@ export default function ChatPanel() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 md:w-36">
-          <button
-            type="submit"
-            disabled={isDisabled}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-500 px-4 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:gap-3 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Send plan
-            <PaperAirplaneIcon className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 dark:border-slate-700 dark:text-slate-200"
-            onClick={() => alert("Voice input coming soon!")}
-          >
-            <MicrophoneIcon className="h-5 w-5" />
-            Voice
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isDisabled}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-500 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:gap-3 disabled:cursor-not-allowed disabled:opacity-60 md:w-48"
+        >
+          Send plan
+          <PaperAirplaneIcon className="h-5 w-5" />
+        </button>
       </div>
     </form>
   );

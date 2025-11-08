@@ -31,6 +31,9 @@ const highlights = [
 
 const hotelsLink = buildHotelsLink(trip);
 const flightsLink = buildFlightsLink(trip);
+const heroTitle = trip.origin
+  ? `${trip.origin} → ${trip.city}`
+  : trip.city;
 
 export default function Home() {
   return (
@@ -50,7 +53,7 @@ export default function Home() {
               WanderGenie
             </p>
             <h1 className="mt-3 text-4xl font-black leading-tight text-white sm:text-5xl">
-              NYC winter escape, mapped to your mood.
+              {heroTitle}
             </h1>
             <p className="mt-4 text-lg text-slate-300">
               Blend iconic highlights with local secrets. Fine-tune every day
