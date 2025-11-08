@@ -1,0 +1,13 @@
+{
+  "id": "poi:statue_of_liberty",
+  "name": "Statue of Liberty",
+  "lat": 40.6892, "lon": -74.0445,
+  "city": "New York",
+  "tags": ["landmark","historic","view"],
+  "duration_min": 120,
+  "booking_required": true,
+  "booking_url": "https://www.statuecitycruises.com/",
+  "hours": {"mon":[["09:00","17:00"]], "...": [], "tz":"America/New_York"},
+  "notes": ["Crown tickets sold separately; limited supply"],
+  "source": "offline_seed", "source_id": "statue_liberty"
+}
