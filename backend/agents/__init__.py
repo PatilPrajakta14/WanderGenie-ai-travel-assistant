@@ -15,6 +15,7 @@ from .state import (
     TravelPreferences,
 )
 from .llm_config import llm_provider, LLMProvider
+from .graph import trip_graph, create_trip_graph
 
 __all__ = [
     "TripState",
@@ -26,4 +27,6 @@ __all__ = [
     "TravelPreferences",
     "llm_provider",
     "LLMProvider",
+    "trip_graph",
+    "create_trip_graph",
 ]
