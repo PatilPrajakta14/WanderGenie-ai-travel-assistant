@@ -2,9 +2,15 @@
 API routes for trip creation and management
 """
 import uuid
+import asyncio
+import logging
 from typing import Dict
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from backend.schemas import CreateTripRequest, EditTripRequest, TripResponse
+from backend.agents.graph import trip_graph, edit_graph
+from backend.agents.state import TripState
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["trips"])
 
@@ -17,13 +23,99 @@ def generate_trip_id() -> str:
     return f"trip_{uuid.uuid4().hex[:8]}"
 
 
+def run_trip_workflow(trip_id: str, user_input: str):
+    """
+    Run the LangGraph workflow to generate trip itinerary.
+    
+    This function is called in the background after the API returns.
+    It invokes the agent workflow and stores the result.
+    """
+    try:
+        logger.info(f"Starting trip workflow for {trip_id}")
+        
+        # Check if trip_graph was initialized
+        if trip_graph is None:
+            error_msg = "LangGraph workflow not initialized"
+            logger.error(error_msg)
+            trips_store[trip_id] = {
+                "trip_id": trip_id,
+                "status": "failed",
+                "error": error_msg
+            }
+            return
+        
+        # Initialize state
+        initial_state: TripState = {
+            "user_input": user_input,
+            "trip_id": trip_id,
+            "intent": None,
+            "poi_candidates": [],
+            "days": [],
+            "links": {},
+            "map_geojson": {},
+            "calendar_export": {},
+            "edit_instruction": None,
+            "edit_type": None,
+            "needs_new_pois": None,
+            "replacement_pois": [],
+            "modified_days": [],
+            "status": "processing",
+            "current_agent": None,
+            "errors": []
+        }
+        
+        # Invoke the workflow with config for checkpointer
+        logger.info(f"Invoking trip_graph for {trip_id}")
+        config = {"configurable": {"thread_id": trip_id}}
+        final_state = trip_graph.invoke(initial_state, config=config)
+        
+        # Convert state to API response format
+        if final_state["status"] == "error":
+            trips_store[trip_id] = {
+                "trip_id": trip_id,
+                "status": "failed",
+                "errors": final_state["errors"]
+            }
+            logger.error(f"Trip workflow failed for {trip_id}: {final_state['errors']}")
+            return
+        
+        # Extract data from state
+        intent = final_state.get("intent", {})
+        days_data = final_state.get("days", [])
+        links = final_state.get("links", {})
+        
+        # Convert to API response format
+        trip_response = {
+            "trip_id": trip_id,
+            "status": "completed",
+            "city": intent.get("city", ""),
+            "origin": intent.get("origin", ""),
+            "start_date": intent.get("start_date", ""),
+            "end_date": intent.get("start_date", ""),  # Will be calculated properly later
+            "days": days_data,
+            "booking_links": links
+        }
+        
+        trips_store[trip_id] = trip_response
+        logger.info(f"Trip workflow completed successfully for {trip_id}")
+        
+    except Exception as e:
+        error_msg = f"Workflow execution failed: {str(e)}"
+        logger.error(f"Error in trip workflow for {trip_id}: {error_msg}", exc_info=True)
+        trips_store[trip_id] = {
+            "trip_id": trip_id,
+            "status": "failed",
+            "error": error_msg
+        }
+
+
 @router.post("/trip")
-async def create_trip(request: CreateTripRequest):
+async def create_trip(request: CreateTripRequest, background_tasks: BackgroundTasks):
     """
     Create a new trip from natural language prompt
     
     Returns immediately with trip_id and 'processing' status.
-    The agent workflow runs in background (will implement async later).
+    The agent workflow runs in background.
     """
     trip_id = generate_trip_id()
     
@@ -34,8 +126,10 @@ async def create_trip(request: CreateTripRequest):
         "prompt": request.prompt
     }
     
-    # TODO: Trigger LangGraph workflow asynchronously
-    # For now, just return processing status
+    # Trigger LangGraph workflow in background
+    background_tasks.add_task(run_trip_workflow, trip_id, request.prompt)
+    
+    logger.info(f"Created trip {trip_id}, workflow queued")
     
     return {
         "trip_id": trip_id,
@@ -43,7 +137,7 @@ async def create_trip(request: CreateTripRequest):
     }
 
 
-@router.get("/trip/{trip_id}", response_model=TripResponse)
+@router.get("/trip/{trip_id}")
 async def get_trip(trip_id: str):
     """
     Get trip details by ID
@@ -71,6 +165,68 @@ async def get_trip(trip_id: str):
     
     # Return complete trip data
     return trip_data
+
+
+@router.post("/trip/sync")
+async def create_trip_sync(request: CreateTripRequest):
+    """
+    Create trip synchronously (for testing/debugging).
+    This blocks until the trip is fully generated.
+    """
+    trip_id = generate_trip_id()
+    
+    try:
+        logger.info(f"Starting synchronous trip creation for {trip_id}")
+        
+        # Initialize state
+        initial_state: TripState = {
+            "user_input": request.prompt,
+            "trip_id": trip_id,
+            "intent": None,
+            "poi_candidates": [],
+            "days": [],
+            "links": {},
+            "map_geojson": {},
+            "calendar_export": {},
+            "edit_instruction": None,
+            "edit_type": None,
+            "needs_new_pois": None,
+            "replacement_pois": [],
+            "modified_days": [],
+            "status": "processing",
+            "current_agent": None,
+            "errors": []
+        }
+        
+        # Run workflow synchronously
+        config = {"configurable": {"thread_id": trip_id}}
+        final_state = trip_graph.invoke(initial_state, config=config)
+        
+        if final_state["status"] == "error" or final_state.get("errors"):
+            return {
+                "trip_id": trip_id,
+                "status": "failed",
+                "errors": final_state.get("errors", ["Unknown error"])
+            }
+        
+        # Extract data
+        intent = final_state.get("intent", {})
+        days_data = final_state.get("days", [])
+        links = final_state.get("links", {})
+        
+        return {
+            "trip_id": trip_id,
+            "status": "completed",
+            "city": intent.get("city", ""),
+            "origin": intent.get("origin", ""),
+            "start_date": intent.get("start_date", ""),
+            "days": days_data,
+            "booking_links": links
+        }
+        
+    except Exception as e:
+        logger.error(f"Sync trip creation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.patch("/trip/{trip_id}", response_model=TripResponse)
