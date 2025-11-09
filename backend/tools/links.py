@@ -2,10 +2,12 @@
 Booking link generation tools.
 
 This module provides functions to generate booking links for flights and hotels.
+Uses LLM web search for accurate, up-to-date booking links.
 """
 
 import logging
 from typing import Dict
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ def build_flight_link(
     return_date: str = None
 ) -> str:
     """
-    Generate a flight booking link.
+    Generate a flight booking link using LLM web search.
     
     Args:
         origin: Origin city or airport code
@@ -29,19 +31,33 @@ def build_flight_link(
     Returns:
         URL string for flight booking search
     """
-    # Use Google Flights as the booking platform
-    # Format: https://www.google.com/travel/flights?q=Flights%20from%20{origin}%20to%20{destination}%20on%20{date}
-    
-    if return_date:
-        query = f"Flights from {origin} to {destination} on {start_date} returning {return_date}"
-    else:
-        query = f"Flights from {origin} to {destination} on {start_date}"
-    
-    params = {"q": query}
-    url = f"https://www.google.com/travel/flights?{urlencode(params)}"
-    
-    logger.info(f"Generated flight link: {url}")
-    return url
+    try:
+        # Try to use web search for accurate links
+        from backend.tools.web_search import search_flight_booking_link
+        
+        if return_date:
+            url = search_flight_booking_link(origin, destination, start_date, return_date)
+        else:
+            # If no return date, assume one-way
+            url = search_flight_booking_link(origin, destination, start_date, start_date)
+        
+        logger.info(f"Generated flight link via web search: {url}")
+        return url
+        
+    except Exception as e:
+        logger.warning(f"Web search failed, using fallback: {e}")
+        
+        # Fallback to Google Flights
+        if return_date:
+            query = f"Flights from {origin} to {destination} on {start_date} returning {return_date}"
+        else:
+            query = f"Flights from {origin} to {destination} on {start_date}"
+        
+        params = {"q": query}
+        url = f"https://www.google.com/travel/flights?{urlencode(params)}"
+        
+        logger.info(f"Generated flight link (fallback): {url}")
+        return url
 
 
 def build_hotel_link(
@@ -51,7 +67,7 @@ def build_hotel_link(
     party: Dict[str, int]
 ) -> str:
     """
-    Generate a hotel booking link.
+    Generate a hotel booking link using LLM web search.
     
     Args:
         city: Destination city
@@ -62,24 +78,35 @@ def build_hotel_link(
     Returns:
         URL string for hotel booking search
     """
-    # Use Google Hotels as the booking platform
-    # Calculate total guests
-    adults = party.get("adults", 1)
-    children = party.get("children", 0)
-    teens = party.get("teens", 0)
-    
-    # Teens count as adults for hotel booking
-    total_adults = adults + teens
-    
-    query = f"Hotels in {city}"
-    
-    # Build URL with parameters
-    params = {
-        "q": query,
-        "ts": "CAESABogCgIaABIaEhQKBwjZDxALGBQSBwjZDxALGBkYATICEAAqCQoFOgNVU0QaAA"  # Base parameter
-    }
-    
-    url = f"https://www.google.com/travel/hotels?{urlencode(params)}"
-    
-    logger.info(f"Generated hotel link for {city}, {nights} nights, {total_adults} adults, {children} children")
-    return url
+    try:
+        # Calculate check-out date
+        check_in_dt = datetime.strptime(check_in, "%Y-%m-%d")
+        check_out_dt = check_in_dt + timedelta(days=nights)
+        check_out = check_out_dt.strftime("%Y-%m-%d")
+        
+        # Calculate total guests
+        adults = party.get("adults", 1)
+        children = party.get("children", 0)
+        teens = party.get("teens", 0)
+        
+        # Teens count as adults for hotel booking
+        total_guests = adults + teens + children
+        
+        # Try to use web search for accurate links
+        from backend.tools.web_search import search_hotel_booking_link
+        
+        url = search_hotel_booking_link(city, check_in, check_out, total_guests)
+        
+        logger.info(f"Generated hotel link via web search: {url}")
+        return url
+        
+    except Exception as e:
+        logger.warning(f"Web search failed, using fallback: {e}")
+        
+        # Fallback to Google Hotels
+        query = f"Hotels in {city}"
+        params = {"q": query}
+        url = f"https://www.google.com/travel/hotels?{urlencode(params)}"
+        
+        logger.info(f"Generated hotel link (fallback): {url}")
+        return url

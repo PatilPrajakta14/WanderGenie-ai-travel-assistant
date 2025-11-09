@@ -84,14 +84,29 @@ def run_trip_workflow(trip_id: str, user_input: str):
         days_data = final_state.get("days", [])
         links = final_state.get("links", {})
         
+        # Calculate end_date properly
+        start_date = intent.get("start_date", "")
+        nights = intent.get("nights", 0)
+        end_date = start_date
+        
+        if start_date and nights:
+            try:
+                from datetime import datetime, timedelta
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = start_dt + timedelta(days=nights)
+                end_date = end_dt.strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"Failed to calculate end_date: {e}")
+                end_date = start_date
+        
         # Convert to API response format
         trip_response = {
             "trip_id": trip_id,
             "status": "completed",
             "city": intent.get("city", ""),
             "origin": intent.get("origin", ""),
-            "start_date": intent.get("start_date", ""),
-            "end_date": intent.get("start_date", ""),  # Will be calculated properly later
+            "start_date": start_date,
+            "end_date": end_date,
             "days": days_data,
             "booking_links": links
         }
@@ -214,12 +229,28 @@ async def create_trip_sync(request: CreateTripRequest):
         days_data = final_state.get("days", [])
         links = final_state.get("links", {})
         
+        # Calculate end_date properly
+        start_date = intent.get("start_date", "")
+        nights = intent.get("nights", 0)
+        end_date = start_date
+        
+        if start_date and nights:
+            try:
+                from datetime import datetime, timedelta
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = start_dt + timedelta(days=nights)
+                end_date = end_dt.strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"Failed to calculate end_date: {e}")
+                end_date = start_date
+        
         return {
             "trip_id": trip_id,
             "status": "completed",
             "city": intent.get("city", ""),
             "origin": intent.get("origin", ""),
-            "start_date": intent.get("start_date", ""),
+            "start_date": start_date,
+            "end_date": end_date,
             "days": days_data,
             "booking_links": links
         }

@@ -1,0 +1,407 @@
+{
+  "trip_id": "trip_c9a07805",
+  "status": "completed",
+  "city": "Mumbai, India",
+  "origin": "Buffalo, NY",
+  "start_date": "2025-12-20",
+  "end_date": "2025-12-25",
+  "days": [
+    {
+      "date": "2025-12-20",
+      "blocks": [
+        {
+          "start_time": "09:00",
+          "end_time": "09:30",
+          "poi": {
+            "name": "Marine Drive",
+            "lat": 18.9264,
+            "lon": 72.8289,
+            "tags": ["view"],
+            "duration_min": 30,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Iconic promenade with stunning Arabian Sea views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "10:00",
+          "end_time": "11:00",
+          "poi": {
+            "name": "Gateway of India",
+            "lat": 18.9214,
+            "lon": 72.8307,
+            "tags": ["view", "historic"],
+            "duration_min": 60,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Monumental arch with views of the harbor.",
+            "open_hours": null
+          },
+          "travel_from_previous": 10
+        },
+        {
+          "start_time": "12:30",
+          "end_time": "14:00",
+          "poi": {
+            "name": "Pizza by the Bay",
+            "lat": 18.9294,
+            "lon": 72.8317,
+            "tags": ["food", "pizza", "restaurant"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Popular pizza restaurant with sea views",
+            "open_hours": null
+          },
+          "travel_from_previous": 15
+        },
+        {
+          "start_time": "14:30",
+          "end_time": "16:00",
+          "poi": {
+            "name": "Flora Fountain",
+            "lat": 18.9294,
+            "lon": 72.8317,
+            "tags": ["view", "historic"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Historic monument with city views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 5
+        },
+        {
+          "start_time": "16:30",
+          "end_time": "17:45",
+          "poi": {
+            "name": "Chhatrapati Shivaji Terminus",
+            "lat": 18.9352,
+            "lon": 72.83,
+            "tags": ["view", "historic"],
+            "duration_min": 75,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Iconic railway station with great views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 11
+        }
+      ]
+    },
+    {
+      "date": "2025-12-21",
+      "blocks": [
+        {
+          "start_time": "09:00",
+          "end_time": "10:00",
+          "poi": {
+            "name": "Oval Maidan",
+            "lat": 18.9242,
+            "lon": 72.8231,
+            "tags": ["view", "park"],
+            "duration_min": 60,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Large green space with views of Marine Drive.",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "10:30",
+          "end_time": "12:00",
+          "poi": {
+            "name": "Haji Ali Dargah",
+            "lat": 18.9541,
+            "lon": 72.807,
+            "tags": ["view", "historic"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Mosque with stunning sea views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 21
+        },
+        {
+          "start_time": "12:30",
+          "end_time": "14:00",
+          "poi": {
+            "name": "Pizzeria Napoli",
+            "lat": 18.9398,
+            "lon": 72.8241,
+            "tags": ["food", "pizza", "italian"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Authentic Italian pizza near Chowpatty Beach",
+            "open_hours": null
+          },
+          "travel_from_previous": 18
+        },
+        {
+          "start_time": "14:15",
+          "end_time": "15:30",
+          "poi": {
+            "name": "Chowpatty Beach",
+            "lat": 18.9398,
+            "lon": 72.8241,
+            "tags": ["view", "beach"],
+            "duration_min": 75,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Bustling beach with great evening views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 5
+        },
+        {
+          "start_time": "16:00",
+          "end_time": "18:00",
+          "poi": {
+            "name": "Wankhede Stadium",
+            "lat": 18.9494,
+            "lon": 72.8167,
+            "tags": ["view", "sports"],
+            "duration_min": 120,
+            "booking_required": true,
+            "booking_url": "https://www.mumbaicricket.com",
+            "notes": "Stadium with city skyline views. Teen-friendly!",
+            "open_hours": null
+          },
+          "travel_from_previous": 18
+        }
+      ]
+    },
+    {
+      "date": "2025-12-22",
+      "blocks": [
+        {
+          "start_time": "09:00",
+          "end_time": "10:30",
+          "poi": {
+            "name": "Juhu Beach",
+            "lat": 19.1048,
+            "lon": 72.8293,
+            "tags": ["view", "beach"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Popular beach with sunset views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "11:00",
+          "end_time": "12:30",
+          "poi": {
+            "name": "Mount Mary Church",
+            "lat": 19.1161,
+            "lon": 72.8264,
+            "tags": ["view", "historic"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Church with panoramic city views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 17
+        },
+        {
+          "start_time": "12:30",
+          "end_time": "14:00",
+          "poi": {
+            "name": "Domino's Pizza - Juhu",
+            "lat": 19.1048,
+            "lon": 72.8293,
+            "tags": ["food", "pizza"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Pizza near Juhu Beach",
+            "open_hours": null
+          },
+          "travel_from_previous": 17
+        },
+        {
+          "start_time": "14:30",
+          "end_time": "16:00",
+          "poi": {
+            "name": "Powai Lake",
+            "lat": 19.1101,
+            "lon": 72.8957,
+            "tags": ["view", "park"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Serene lake with beautiful views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 31
+        },
+        {
+          "start_time": "16:30",
+          "end_time": "18:00",
+          "poi": {
+            "name": "Global Vipassana Pagoda",
+            "lat": 19.1217,
+            "lon": 72.8364,
+            "tags": ["view", "historic"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Monumental structure with beautiful surroundings.",
+            "open_hours": null
+          },
+          "travel_from_previous": 29
+        }
+      ]
+    },
+    {
+      "date": "2025-12-23",
+      "blocks": [
+        {
+          "start_time": "09:00",
+          "end_time": "10:00",
+          "poi": {
+            "name": "Siddhivinayak Temple",
+            "lat": 19.0386,
+            "lon": 72.8424,
+            "tags": ["view", "historic", "temple"],
+            "duration_min": 60,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Famous temple with beautiful architecture.",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "10:30",
+          "end_time": "12:00",
+          "poi": {
+            "name": "Aermont Club",
+            "lat": 19.0756,
+            "lon": 72.8468,
+            "tags": ["view", "food"],
+            "duration_min": 90,
+            "booking_required": true,
+            "booking_url": "https://aermont.com",
+            "notes": "Exclusive club with panoramic city views and fine dining.",
+            "open_hours": null
+          },
+          "travel_from_previous": 22
+        },
+        {
+          "start_time": "12:30",
+          "end_time": "14:00",
+          "poi": {
+            "name": "Pizza Express - Bandra",
+            "lat": 19.0756,
+            "lon": 72.8468,
+            "tags": ["food", "pizza"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Pizza restaurant at Aermont Club area",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "14:30",
+          "end_time": "16:30",
+          "poi": {
+            "name": "Nehru Planetarium",
+            "lat": 18.9697,
+            "lon": 72.8241,
+            "tags": ["view", "science"],
+            "duration_min": 120,
+            "booking_required": true,
+            "booking_url": "http://nehruplanetarium.gov.in",
+            "notes": "Planetarium with occasional night sky views. Teen-friendly!",
+            "open_hours": null
+          },
+          "travel_from_previous": 46
+        },
+        {
+          "start_time": "17:00",
+          "end_time": "18:00",
+          "poi": {
+            "name": "Yashwantrao Chavan Maidan",
+            "lat": 18.9667,
+            "lon": 72.8333,
+            "tags": ["view", "park"],
+            "duration_min": 60,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Large open space with city views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 15
+        }
+      ]
+    },
+    {
+      "date": "2025-12-24",
+      "blocks": [
+        {
+          "start_time": "09:00",
+          "end_time": "11:00",
+          "poi": {
+            "name": "Elephanta Caves",
+            "lat": 18.9462,
+            "lon": 72.9368,
+            "tags": ["view", "historic", "caves"],
+            "duration_min": 120,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Ancient cave temple with stunning sea views.",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "12:30",
+          "end_time": "14:00",
+          "poi": {
+            "name": "Lunch Break",
+            "lat": 18.9462,
+            "lon": 72.9368,
+            "tags": ["food"],
+            "duration_min": 90,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Lunch near Elephanta Caves",
+            "open_hours": null
+          },
+          "travel_from_previous": 0
+        },
+        {
+          "start_time": "14:30",
+          "end_time": "16:30",
+          "poi": {
+            "name": "Mandwa Beach",
+            "lat": 18.9833,
+            "lon": 72.75,
+            "tags": ["view", "beach"],
+            "duration_min": 120,
+            "booking_required": false,
+            "booking_url": null,
+            "notes": "Scenic beach with ferry rides to Elephanta Caves.",
+            "open_hours": null
+          },
+          "travel_from_previous": 60
+        }
+      ]
+    }
+  ],
+  "booking_links": {
+    "flights": "https://www.google.com/travel/flights?q=Flights+from+Buffalo%2C+NY+to+Mumbai%2C+India+on+2025-12-20+returning+2025-12-25",
+    "hotels": "https://www.google.com/travel/hotels?q=Hotels+in+Mumbai%2C+India"
+  }
+}

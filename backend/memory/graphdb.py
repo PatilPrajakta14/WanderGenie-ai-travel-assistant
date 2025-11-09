@@ -75,14 +75,15 @@ class GraphDBClient:
             # Create Neo4j driver with connection pooling
             # The driver maintains a pool of connections that are reused across sessions
             # max_connection_pool_size controls the maximum number of connections
+            # Note: Don't set encrypted=True when using bolt+s:// or neo4j+s:// URI schemes
+            # as encryption is already implied by the URI scheme
             self.driver = GraphDatabase.driver(
                 self.uri,
                 auth=(self.user, self.password),
                 max_connection_pool_size=self.max_connection_pool_size,
                 # Additional connection pool settings for optimization
                 connection_acquisition_timeout=60.0,  # seconds
-                max_transaction_retry_time=30.0,  # seconds
-                encrypted=True  # Use encrypted connections
+                max_transaction_retry_time=30.0  # seconds
             )
             
             # Verify connectivity by running a simple query

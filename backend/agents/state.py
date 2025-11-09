@@ -20,6 +20,7 @@ class TravelPreferences(TypedDict):
     pace: Literal["relaxed", "moderate", "fast"]
     interests: List[str]
     constraints: List[str]
+    food_preferences: List[str]  # Specific food preferences (e.g., ["pizza", "sushi"])
 
 
 class Intent(TypedDict):
