@@ -27,9 +27,9 @@ Get:
 
 **See WanderGenie in action!**
 
-[![WanderGenie Demo](https://img.shields.io/badge/▶️_Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](YOUR_YOUTUBE_LINK_HERE)
+[![WanderGenie Demo](https://img.shields.io/badge/▶️_Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/_Yy45dD6OKo?si=JRJoXCLChYxToToi)
 
-> *[2-minute demo showcasing trip planning from natural language input to complete itinerary with maps, timeline, and booking links]*
+> *[4-minute demo showcasing trip planning from natural language input to complete itinerary with maps, timeline, and booking links]*
 
 ---
 
