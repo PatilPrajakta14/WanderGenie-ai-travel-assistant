@@ -371,8 +371,18 @@ class VectorDBClient:
             results_with_scores = []
             for doc in documents:
                 if 'embedding' in doc and doc['embedding']:
+                    # Parse embedding if it's a string (from Supabase)
+                    doc_embedding = doc['embedding']
+                    if isinstance(doc_embedding, str):
+                        try:
+                            import json
+                            doc_embedding = json.loads(doc_embedding)
+                        except (json.JSONDecodeError, ValueError):
+                            logger.warning(f"Failed to parse embedding for doc: {doc.get('id', 'unknown')}")
+                            continue
+                    
                     # Calculate cosine similarity
-                    similarity = self._cosine_similarity(query_embedding, doc['embedding'])
+                    similarity = self._cosine_similarity(query_embedding, doc_embedding)
                     results_with_scores.append({
                         **doc,
                         'similarity_score': similarity
