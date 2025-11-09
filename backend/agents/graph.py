@@ -49,38 +49,12 @@ def create_trip_graph():
     workflow.add_edge("researcher", "packager")
     workflow.add_edge("packager", END)
     
-    # Set up PostgreSQL checkpointer for state persistence
-    db_connection_string = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_CONNECTION_STRING")
-    
-    if not db_connection_string:
-        logger.warning(
-            "No database connection string found. "
-            "Set DATABASE_URL or SUPABASE_CONNECTION_STRING environment variable. "
-            "Compiling graph without checkpointer."
-        )
-        # Compile without checkpointer for development/testing
-        app = workflow.compile()
-        logger.info("LangGraph workflow compiled successfully (no checkpointer)")
-        return app
-    
-    try:
-        logger.info("Initializing PostgreSQL checkpointer")
-        checkpointer = PostgresSaver.from_conn_string(db_connection_string)
-        
-        # Compile graph with checkpointer
-        app = workflow.compile(checkpointer=checkpointer)
-        
-        logger.info("LangGraph workflow compiled successfully with PostgreSQL checkpointer")
-        return app
-        
-    except Exception as e:
-        logger.error(f"Failed to initialize PostgreSQL checkpointer: {e}")
-        logger.warning("Compiling graph without checkpointer as fallback")
-        
-        # Fallback: compile without checkpointer
-        app = workflow.compile()
-        logger.info("LangGraph workflow compiled successfully (fallback mode)")
-        return app
+    # For MVP/hackathon: compile without checkpointer for simplicity
+    # State persistence can be added later if needed
+    logger.info("Compiling workflow without checkpointer (MVP mode)")
+    app = workflow.compile()
+    logger.info("LangGraph workflow compiled successfully")
+    return app
 
 
 def create_edit_graph():
@@ -117,37 +91,11 @@ def create_edit_graph():
     workflow.add_edge("edit_researcher", "edit_packager")
     workflow.add_edge("edit_packager", END)
     
-    # Set up PostgreSQL checkpointer for state persistence
-    db_connection_string = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_CONNECTION_STRING")
-    
-    if not db_connection_string:
-        logger.warning(
-            "No database connection string found for edit workflow. "
-            "Compiling graph without checkpointer."
-        )
-        # Compile without checkpointer for development/testing
-        app = workflow.compile()
-        logger.info("LangGraph edit workflow compiled successfully (no checkpointer)")
-        return app
-    
-    try:
-        logger.info("Initializing PostgreSQL checkpointer for edit workflow")
-        checkpointer = PostgresSaver.from_conn_string(db_connection_string)
-        
-        # Compile graph with checkpointer
-        app = workflow.compile(checkpointer=checkpointer)
-        
-        logger.info("LangGraph edit workflow compiled successfully with PostgreSQL checkpointer")
-        return app
-        
-    except Exception as e:
-        logger.error(f"Failed to initialize PostgreSQL checkpointer for edit workflow: {e}")
-        logger.warning("Compiling edit graph without checkpointer as fallback")
-        
-        # Fallback: compile without checkpointer
-        app = workflow.compile()
-        logger.info("LangGraph edit workflow compiled successfully (fallback mode)")
-        return app
+    # For MVP/hackathon: compile without checkpointer for simplicity
+    logger.info("Compiling edit workflow without checkpointer (MVP mode)")
+    app = workflow.compile()
+    logger.info("LangGraph edit workflow compiled successfully")
+    return app
 
 
 # Global graph instances
