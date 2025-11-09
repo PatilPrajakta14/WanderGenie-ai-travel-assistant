@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import Map, { Marker, NavigationControl, Popup } from "react-map-gl/mapbox";
+import Map, {
+  MapRef,
+  Marker,
+  NavigationControl,
+  Popup,
+} from "react-map-gl/mapbox";
 import trip from "../data/sampleTrip.json";
 
 const MAPBOX_TOKEN =
@@ -12,19 +17,73 @@ type MapViewProps = {
 
 export default function MapView({ isActive }: MapViewProps) {
   const [selected, setSelected] = useState<any>(null);
+  const mapRef = useRef<MapRef | null>(null);
   const allPoints = useMemo(
     () => trip.days.flatMap((d) => d.activities),
     []
   );
-  const points = isActive ? allPoints : [];
+  const points = useMemo(
+    () => (isActive ? allPoints : []),
+    [isActive, allPoints]
+  );
 
   useEffect(() => {
     if (!isActive) setSelected(null);
   }, [isActive]);
 
-  const initialViewState = isActive
-    ? { longitude: -73.9857, latitude: 40.7484, zoom: 11 }
-    : { longitude: 0, latitude: 20, zoom: 1.2 };
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!isActive || points.length === 0) {
+      map.flyTo({
+        center: [0, 20],
+        zoom: 1.2,
+        duration: 1200,
+        essential: true,
+      });
+      return;
+    }
+
+    const bounds = points.reduce(
+      (acc, poi) => {
+        return {
+          minLon: Math.min(acc.minLon, poi.lon),
+          maxLon: Math.max(acc.maxLon, poi.lon),
+          minLat: Math.min(acc.minLat, poi.lat),
+          maxLat: Math.max(acc.maxLat, poi.lat),
+        };
+      },
+      {
+        minLon: Infinity,
+        maxLon: -Infinity,
+        minLat: Infinity,
+        maxLat: -Infinity,
+      }
+    );
+
+    if (
+      !Number.isFinite(bounds.minLon) ||
+      !Number.isFinite(bounds.maxLon) ||
+      !Number.isFinite(bounds.minLat) ||
+      !Number.isFinite(bounds.maxLat)
+    ) {
+      return;
+    }
+
+    map.fitBounds(
+      [
+        [bounds.minLon, bounds.minLat],
+        [bounds.maxLon, bounds.maxLat],
+      ],
+      {
+        padding: { top: 80, bottom: 80, left: 80, right: 80 },
+        duration: 1500,
+      }
+    );
+  }, [isActive, points]);
+
+  const initialViewState = { longitude: 0, latitude: 20, zoom: 1.2 };
 
   return (
     <div className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70 shadow-2xl">
@@ -40,6 +99,7 @@ export default function MapView({ isActive }: MapViewProps) {
         </p>
       </div>
       <Map
+        ref={mapRef}
         reuseMaps
         mapboxAccessToken={MAPBOX_TOKEN}
         initialViewState={initialViewState}
