@@ -208,7 +208,7 @@ def seed_vectordb(
     logger.info("Initializing VectorDB client...")
     client = VectorDBClient(
         supabase_url=settings.supabase_url,
-        supabase_key=settings.supabase_service_key or settings.supabase_key,
+        supabase_key=settings.supabase_key,
         embedding_model="text-embedding-3-small",
         openai_api_key=settings.openai_api_key
     )
