@@ -73,6 +73,8 @@ Rules:
 - Leave buffer time for travel between POIs
 - Respect POI duration_min
 - For lunch breaks, set duration_min to 60 and travel_from_previous to 0
+ - Avoid repeating the same POI name across the entire trip unless the user explicitly asks to repeat
+ - When a POI near a lunch break changes, refresh the lunch note (e.g., "Lunch near <neighbor>")
 
 Example output structure:
 {
@@ -347,6 +349,85 @@ Include lunch breaks around 12:30-13:30.
             return state
         
         logger.info(f"LLM generated {len(days)}-day schedule")
+
+        # Post-process: de-duplicate POIs across the whole trip and refresh lunch notes
+        def _dedupe_trip_and_refresh_lunch(days_in: List[Dict[str, Any]], candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+            if not days_in:
+                return days_in
+            used: set = set()
+            cand_list = candidates or []
+
+            # First collect names in order and apply replacements when a name repeats (excluding Lunch Break)
+            for day in days_in:
+                blocks = day.get("blocks", []) or []
+                for blk in blocks:
+                    poi = blk.get("poi", {}) or {}
+                    name = (poi.get("name") or "").strip()
+                    if not name or name.lower() == "lunch break":
+                        continue
+                    if name in used:
+                        # Try find a replacement with overlapping tags or similar hint
+                        tags = {str(t).lower() for t in (poi.get("tags") or [])}
+                        desired = set(tags)
+                        # Heuristic: add keyword from name if present
+                        lname = name.lower()
+                        for kw in ["beach", "fort", "museum", "garden", "park", "market", "view"]:
+                            if kw in lname:
+                                desired.add(kw)
+                        replacement = None
+                        for cand in cand_list:
+                            cname = (cand.get("name") or "").strip()
+                            if not cname or cname in used:
+                                continue
+                            ctags = {str(t).lower() for t in (cand.get("tags") or [])}
+                            if desired and (ctags & desired):
+                                replacement = cand
+                                break
+                        if not replacement:
+                            for cand in cand_list:
+                                cname = (cand.get("name") or "").strip()
+                                if cname and cname not in used:
+                                    replacement = cand
+                                    break
+                        if replacement:
+                            blk["poi"] = {
+                                "name": replacement.get("name"),
+                                "lat": replacement.get("lat"),
+                                "lon": replacement.get("lon"),
+                                "tags": replacement.get("tags", []),
+                                "duration_min": replacement.get("duration_min", poi.get("duration_min", 60)),
+                                "booking_required": replacement.get("booking_required", False),
+                                "booking_url": replacement.get("booking_url"),
+                                "notes": replacement.get("notes") or poi.get("notes"),
+                                "open_hours": replacement.get("open_hours"),
+                            }
+                            used.add(replacement.get("name"))
+                        else:
+                            # If no replacement, keep but do not add duplicate again to used (already present)
+                            pass
+                    else:
+                        used.add(name)
+
+            # Refresh lunch notes referencing nearest neighbor name in sequence
+            for day in days_in:
+                blocks = day.get("blocks", []) or []
+                for i, blk in enumerate(blocks):
+                    poi = blk.get("poi", {}) or {}
+                    if (poi.get("name") or "").strip().lower() == "lunch break":
+                        neighbor = None
+                        if i > 0:
+                            neighbor = (blocks[i-1].get("poi", {}).get("name") or "").strip()
+                        if not neighbor and i + 1 < len(blocks):
+                            neighbor = (blocks[i+1].get("poi", {}).get("name") or "").strip()
+                        poi["notes"] = f"Lunch near {neighbor}." if neighbor else "Lunch nearby."
+                        blk["poi"] = poi
+
+            return days_in
+
+        try:
+            days = _dedupe_trip_and_refresh_lunch(days, poi_candidates)
+        except Exception as e:
+            logger.warning(f"Trip-level dedupe/lunch refresh failed: {e}")
         
         # Calculate travel times between POIs
         logger.info("Calculating travel times between POIs")
@@ -486,12 +567,14 @@ Edit types to handle:
 - Adjust timing: "Start earlier on day 1"
 - Swap POIs: "Swap the order of X and Y"
 
-Rules:
+ Rules:
 - Maintain no overlapping time blocks
 - Recalculate travel times between POIs
 - Keep lunch breaks around 12:30-13:30
 - Respect POI duration_min
 - Maintain geographic clustering where possible
+ - Avoid duplicate POI names across the entire trip unless the user explicitly requests a repeat (choose a similar alternative if needed)
+- When a POI near a lunch break changes, refresh the lunch note (e.g., "Lunch near <neighbor>")
 - Update only affected days, but return complete schedule
 
 Example:
@@ -613,7 +696,86 @@ Mark which days were modified in the modified_days array.
             return state
         
         logger.info(f"LLM updated schedule: {len(modified_days_indices)} days modified")
-        
+
+        # Post-process schedule: dedupe POIs per day and refresh lunch notes
+        def _fix_duplicates_and_lunch(days: List[Dict[str, Any]], candidates: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[int]]:
+            modified_idx: List[int] = []
+            cand_list = candidates or []
+            global_used: set = set()
+            for d_idx, day in enumerate(days or []):
+                blocks = day.get("blocks", []) or []
+                for b in blocks:
+                    poi = b.get("poi", {}) or {}
+                    name = (poi.get("name") or "").strip()
+                    if not name or name.lower() == "lunch break":
+                        continue
+                    if name in global_used:
+                        # Replace duplicate with a similar unused candidate
+                        tags = {str(t).lower() for t in (poi.get("tags") or [])}
+                        desired = set(tags)
+                        lname = name.lower()
+                        for kw in ["beach", "fort", "museum", "garden", "park", "market", "view"]:
+                            if kw in lname:
+                                desired.add(kw)
+                        replacement = None
+                        for cand in cand_list:
+                            cname = (cand.get("name") or "").strip()
+                            if not cname or cname in global_used:
+                                continue
+                            ctags = {str(t).lower() for t in (cand.get("tags") or [])}
+                            if desired and (ctags & desired):
+                                replacement = cand
+                                break
+                        if not replacement:
+                            for cand in cand_list:
+                                cname = (cand.get("name") or "").strip()
+                                if cname and cname not in global_used:
+                                    replacement = cand
+                                    break
+                        if replacement:
+                            b["poi"] = {
+                                "name": replacement.get("name"),
+                                "lat": replacement.get("lat"),
+                                "lon": replacement.get("lon"),
+                                "tags": replacement.get("tags", []),
+                                "duration_min": replacement.get("duration_min", poi.get("duration_min", 60)),
+                                "booking_required": replacement.get("booking_required", False),
+                                "booking_url": replacement.get("booking_url"),
+                                "notes": replacement.get("notes") or poi.get("notes"),
+                                "open_hours": replacement.get("open_hours"),
+                            }
+                            global_used.add(replacement.get("name"))
+                            if d_idx not in modified_idx:
+                                modified_idx.append(d_idx)
+                        # If no replacement found, keep as duplicate (last resort)
+                    else:
+                        global_used.add(name)
+
+                # Refresh lunch notes
+                for i, blk in enumerate(blocks):
+                    p = blk.get("poi", {}) or {}
+                    if (p.get("name") or "").strip().lower() == "lunch break":
+                        neighbor = None
+                        if i > 0:
+                            neighbor = (blocks[i-1].get("poi", {}).get("name") or "").strip()
+                        if not neighbor and i+1 < len(blocks):
+                            neighbor = (blocks[i+1].get("poi", {}).get("name") or "").strip()
+                        new_note = f"Lunch near {neighbor}." if neighbor else "Lunch nearby."
+                        if p.get("notes") != new_note:
+                            p["notes"] = new_note
+                            blk["poi"] = p
+                            if d_idx not in modified_idx:
+                                modified_idx.append(d_idx)
+            return days, sorted(list(set(modified_idx)))
+
+        try:
+            updated_days, post_mod = _fix_duplicates_and_lunch(updated_days, state.get("poi_candidates", []))
+            if post_mod:
+                logger.info(f"Post-processed schedule: fixed duplicates/lunch notes on days {post_mod}")
+                modified_days_indices = sorted(list(set(modified_days_indices + post_mod)))
+        except Exception as e:
+            logger.warning(f"Post-process adjustments failed: {e}")
+
         # Recalculate travel times for modified days
         logger.info("Recalculating travel times for modified days")
         updated_days = calculate_travel_times(updated_days)

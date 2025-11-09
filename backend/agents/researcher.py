@@ -151,7 +151,8 @@ def deduplicate_pois(pois: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         lon = poi.get("lon")
         
         if lat is None or lon is None:
-            logger.warning(f"POI missing coordinates: {poi.get('name')}")
+            # Skip POIs without coordinates quietly to reduce log noise; upstream sources can be sparse
+            logger.debug(f"POI missing coordinates: {poi.get('name')}")
             continue
         
         is_duplicate_location = False

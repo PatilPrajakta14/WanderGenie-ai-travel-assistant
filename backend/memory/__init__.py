@@ -70,18 +70,14 @@ def graphdb_query(city: str, limit: int = 20) -> List[Dict[str, Any]]:
             logger.info("GraphDBClient initialized")
         
         # Query for POIs in the specified city with neighborhood relationships
+        # Query only fields we know exist to avoid Neo4j warnings about
+        # non-existent property keys or relationship types in empty schemas.
         cypher_query = """
         MATCH (p:POI {city: $city})
-        OPTIONAL MATCH (p)-[:LOCATED_IN]->(n:Neighborhood)
-        RETURN p.name as name, 
-               p.lat as lat, 
-               p.lon as lon,
-               p.tags as tags,
-               p.duration_min as duration_min,
-               p.booking_required as booking_required,
-               p.booking_url as booking_url,
-               p.notes as notes,
-               n.name as neighborhood
+        WHERE p.lat IS NOT NULL AND p.lon IS NOT NULL
+        RETURN p.name AS name,
+               p.lat AS lat,
+               p.lon AS lon
         LIMIT $limit
         """
         
@@ -95,6 +91,7 @@ def graphdb_query(city: str, limit: int = 20) -> List[Dict[str, Any]]:
                 "name": record.get("name"),
                 "lat": record.get("lat"),
                 "lon": record.get("lon"),
+                # Provide safe defaults for optional fields that may not exist in DB
                 "tags": record.get("tags", []),
                 "duration_min": record.get("duration_min", 60),
                 "booking_required": record.get("booking_required", False),

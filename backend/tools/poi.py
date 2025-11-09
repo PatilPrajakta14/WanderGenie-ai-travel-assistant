@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 # OpenTripMap API
 OPENTRIPMAP_API_KEY = os.getenv("OPENTRIPMAP_API_KEY", "")
 OPENTRIPMAP_BASE_URL = "https://api.opentripmap.com/0.1/en/places"
+# Tunables via env (with sensible defaults)
+OPENTRIPMAP_RADIUS_METERS = int(os.getenv("OPENTRIPMAP_RADIUS_METERS", "8000"))
+OPENTRIPMAP_DEFAULT_LIMIT = int(os.getenv("OPENTRIPMAP_LIMIT", "50"))
+OPENTRIPMAP_KINDS = os.getenv(
+    "OPENTRIPMAP_KINDS",
+    "interesting_places,tourist_facilities,cultural,historic,architecture,natural,foods",
+)
 
 NYC_POIS_PATH = os.path.join(os.path.dirname(__file__), "../../data/nyc_pois.json")
 
@@ -80,14 +87,16 @@ def fetch_pois_from_opentripmap(city: str, limit: int = 30) -> List[Dict[str, An
         
         logger.info(f"Found coordinates for {city}: {lat}, {lon}")
         
-        # Step 2: Search for POIs in radius (5km)
+        # Step 2: Search for POIs in configurable radius
         radius_url = f"{OPENTRIPMAP_BASE_URL}/radius"
+        # Ensure we request enough results to meet caller's need
+        requested_limit = max(limit, OPENTRIPMAP_DEFAULT_LIMIT)
         params = {
-            "radius": 5000,  # 5km
+            "radius": OPENTRIPMAP_RADIUS_METERS,
             "lat": lat,
             "lon": lon,
-            "kinds": "interesting_places,tourist_facilities,cultural,historic,architecture",
-            "limit": limit,
+            "kinds": OPENTRIPMAP_KINDS,
+            "limit": requested_limit,
             "apikey": OPENTRIPMAP_API_KEY
         }
         
@@ -101,7 +110,7 @@ def fetch_pois_from_opentripmap(city: str, limit: int = 30) -> List[Dict[str, An
         
         # Step 3: Convert to our POI format
         pois = []
-        for place in places[:limit]:
+        for place in places[:requested_limit]:
             props = place.get("properties", {})
             geom = place.get("geometry", {}).get("coordinates", [])
             
