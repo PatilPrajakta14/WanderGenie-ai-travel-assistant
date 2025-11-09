@@ -87,7 +87,12 @@ def _blocks_to_activities(days: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def _assemble_trip_response(trip_id: str, status: str, intent: Dict[str, Any], days: List[Dict[str, Any]], links: Dict[str, str]) -> Dict[str, Any]:
     """Build TripResponse dict from internal state parts, converting days format."""
     # Compute end_date if possible (start_date + nights), else fallback to start_date
-    start_date = intent.get("start_date", "") or ""
+    def _s(val: Any) -> str:
+        return val if isinstance(val, str) else ""
+
+    city = _s(intent.get("city"))
+    origin = _s(intent.get("origin"))
+    start_date = _s(intent.get("start_date"))
     end_date = start_date
     try:
         nights = int(intent.get("nights")) if intent.get("nights") is not None else None
@@ -108,8 +113,8 @@ def _assemble_trip_response(trip_id: str, status: str, intent: Dict[str, Any], d
     return {
         "trip_id": trip_id,
         "status": status,
-        "city": intent.get("city", ""),
-        "origin": intent.get("origin", ""),
+        "city": city,
+        "origin": origin,
         "start_date": start_date,
         "end_date": end_date,
         "days": days_converted,
@@ -178,14 +183,32 @@ def run_trip_workflow(trip_id: str, user_input: str):
         days_data = final_state.get("days", [])
         links = final_state.get("links", {})
         
-        # Convert to API response format (activities instead of blocks)
-        trip_response = _assemble_trip_response(
-            trip_id=trip_id,
-            status="completed",
-            intent=intent or {},
-            days=days_data or [],
-            links=links or {},
-        )
+        # Calculate end_date properly
+        start_date = intent.get("start_date", "")
+        nights = intent.get("nights", 0)
+        end_date = start_date
+        
+        if start_date and nights:
+            try:
+                from datetime import datetime, timedelta
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = start_dt + timedelta(days=nights)
+                end_date = end_dt.strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"Failed to calculate end_date: {e}")
+                end_date = start_date
+        
+        # Convert to API response format
+        trip_response = {
+            "trip_id": trip_id,
+            "status": "completed",
+            "city": intent.get("city", ""),
+            "origin": intent.get("origin", ""),
+            "start_date": start_date,
+            "end_date": end_date,
+            "days": days_data,
+            "booking_links": links
+        }
         
         # Persist public response and internal metadata for future edits
         trip_response["_internal"] = {
@@ -315,14 +338,32 @@ async def create_trip_sync(request: CreateTripRequest):
         intent = final_state.get("intent", {})
         days_data = final_state.get("days", [])
         links = final_state.get("links", {})
-
-        return _assemble_trip_response(
-            trip_id=trip_id,
-            status="completed",
-            intent=intent or {},
-            days=days_data or [],
-            links=links or {},
-        )
+        
+        # Calculate end_date properly
+        start_date = intent.get("start_date", "")
+        nights = intent.get("nights", 0)
+        end_date = start_date
+        
+        if start_date and nights:
+            try:
+                from datetime import datetime, timedelta
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = start_dt + timedelta(days=nights)
+                end_date = end_dt.strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"Failed to calculate end_date: {e}")
+                end_date = start_date
+        
+        return {
+            "trip_id": trip_id,
+            "status": "completed",
+            "city": intent.get("city", ""),
+            "origin": intent.get("origin", ""),
+            "start_date": start_date,
+            "end_date": end_date,
+            "days": days_data,
+            "booking_links": links
+        }
         
     except Exception as e:
         logger.error(f"Sync trip creation failed: {e}", exc_info=True)

@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 RESEARCHER_SYSTEM_PROMPT = """You are a travel research assistant specialized in discovering points of interest.
 
 You will receive:
-1. Structured travel intent (city, dates, preferences)
+1. Structured travel intent (city, dates, preferences, party composition)
 2. POI data from multiple sources (API, VectorDB, GraphDB)
 
 Your task is to:
 1. Analyze the provided POI data from all sources
-2. Select 20-30 most relevant POIs based on user interests
+2. Select 20-30 most relevant POIs based on user interests and party composition
 3. Ensure diversity (different neighborhoods, activity types)
 4. Include booking information and practical tips
 5. Deduplicate any POIs that appear in multiple sources
@@ -46,10 +46,14 @@ Output ONLY valid JSON array of POI candidates:
 
 Prioritize:
 - POIs matching user interests (from prefs.interests)
+- Food preferences (from prefs.food_preferences) - include restaurants/food spots matching these
 - Mix of popular attractions and hidden gems
 - Geographic diversity (different neighborhoods)
 - Practical considerations (booking requirements, operating hours)
-- Appropriate for party composition (family-friendly if children, etc.)
+- Appropriate for party composition:
+  * With teens: Include trendy spots, interactive experiences, gaming/tech, street food, Instagram-worthy locations
+  * With children: Family-friendly, interactive museums, parks, kid-friendly restaurants
+  * Adults only: Can include nightlife, fine dining, adult-oriented cultural experiences
 
 Selection criteria:
 - For "relaxed" pace: Focus on 2-3 major attractions per day, leisurely activities
@@ -60,6 +64,7 @@ IMPORTANT:
 - Return ONLY the JSON array, no additional text or explanation
 - Ensure 20-30 POIs are selected (not more, not less)
 - Remove duplicates based on name and location similarity
+- If food_preferences are specified (e.g., "pizza"), include 2-3 restaurants specializing in that cuisine
 """
 
 
@@ -315,6 +320,25 @@ def researcher_node(state: TripState) -> TripState:
         merged_pois = merge_poi_sources(api_pois, vector_pois, graph_pois)
         logger.info(f"Merged to {len(merged_pois)} unique POIs")
         
+        # 4.5. If we have insufficient POIs, use LLM fallback to generate more
+        if len(merged_pois) < 20:
+            logger.warning(f"Only {len(merged_pois)} POIs from all sources, using LLM fallback to generate more")
+            from backend.tools.poi import generate_pois_with_llm
+            
+            # Generate enough POIs to reach at least 25
+            needed_pois = 25 - len(merged_pois)
+            llm_pois = generate_pois_with_llm(city, interests, limit=needed_pois, save_to_db=True)
+            
+            if llm_pois:
+                logger.info(f"LLM generated {len(llm_pois)} additional POIs")
+                # Add LLM POIs to merged list
+                for poi in llm_pois:
+                    poi["_source"] = "llm"
+                    merged_pois.append(poi)
+                logger.info(f"Total POIs after LLM fallback: {len(merged_pois)}")
+            else:
+                logger.error("LLM fallback also failed to generate POIs")
+        
         # 5. Prepare context for LLM selection
         all_pois_data = {
             "merged_pois": merged_pois,
@@ -381,18 +405,35 @@ Example format: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 2, 4, 6, 8, 10, 12, 
         print(f"{'='*60}\n")
         
         # Map indices back to actual POIs with full data
+        # Import duration calculator
+        from backend.tools.poi_duration import calculate_poi_duration, adjust_duration_for_party, adjust_duration_for_pace
+        
         poi_candidates = []
         for idx in selected_indices:
             # Convert 1-based index to 0-based
             poi_idx = idx - 1
             if 0 <= poi_idx < len(merged_pois):
                 poi = merged_pois[poi_idx]
+                
+                # Calculate dynamic duration based on POI type
+                base_duration = calculate_poi_duration(
+                    poi.get("name", ""),
+                    poi.get("tags", []),
+                    default_duration=60
+                )
+                
+                # Adjust for party composition
+                duration = adjust_duration_for_party(base_duration, intent["party"])
+                
+                # Adjust for pace preference
+                duration = adjust_duration_for_pace(duration, intent["prefs"]["pace"])
+                
                 poi_candidates.append({
                     "name": poi.get("name"),
                     "lat": poi.get("lat"),
                     "lon": poi.get("lon"),
                     "tags": poi.get("tags", []),
-                    "duration_min": poi.get("duration_min", 60),
+                    "duration_min": duration,
                     "booking_required": poi.get("booking_required", False),
                     "booking_url": poi.get("booking_url"),
                     "notes": poi.get("notes", ""),

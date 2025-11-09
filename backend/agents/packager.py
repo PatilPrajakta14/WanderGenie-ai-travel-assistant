@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 PACKAGER_SYSTEM_PROMPT = """You are a travel itinerary builder specialized in creating optimized day-by-day schedules.
 
 You will receive:
-1. Travel intent (dates, preferences, party size)
+1. Travel intent (dates, preferences, party size, food preferences)
 2. List of POI candidates
 
 Your task is to:
@@ -31,11 +31,15 @@ Your task is to:
 2. Cluster by geographic proximity to minimize travel
 3. Create time blocks (09:00-18:30 typical day)
 4. Insert lunch breaks (12:30-13:30) as separate blocks
-5. Respect POI duration_min for visit length
+5. Respect POI duration_min for visit length (these are already calculated based on POI type)
 6. Match pace preference:
    - relaxed: 2-3 POIs per day, longer visits
    - moderate: 3-4 POIs per day
    - fast: 4-5 POIs per day, efficient scheduling
+7. For lunch breaks:
+   - If user has food_preferences (e.g., "pizza"), use nearby restaurants matching that cuisine
+   - Otherwise, create generic "Lunch Break" with nearby coordinates
+   - Set lunch break coordinates near the previous POI or between morning/afternoon activities
 
 Output ONLY valid JSON matching this exact schema:
 {
@@ -232,17 +236,32 @@ def calculate_travel_times(days: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 prev_poi = prev_block.get("poi", {})
                 current_poi = block.get("poi", {})
                 
-                # Skip travel calculation for lunch breaks
-                if current_poi.get("name") == "Lunch Break":
-                    block["travel_from_previous"] = 0
-                    continue
-                
                 # Get coordinates
                 prev_lat = prev_poi.get("lat")
                 prev_lon = prev_poi.get("lon")
                 curr_lat = current_poi.get("lat")
                 curr_lon = current_poi.get("lon")
                 
+                # Special handling for lunch breaks
+                if current_poi.get("name") == "Lunch Break":
+                    # If lunch break has same coordinates as previous POI, no travel
+                    if prev_lat == curr_lat and prev_lon == curr_lon:
+                        block["travel_from_previous"] = 0
+                    # Otherwise calculate travel time
+                    elif all(coord is not None for coord in [prev_lat, prev_lon, curr_lat, curr_lon]):
+                        try:
+                            _, travel_time_min = calculate_distance(
+                                prev_lat, prev_lon, curr_lat, curr_lon
+                            )
+                            block["travel_from_previous"] = travel_time_min
+                        except Exception as e:
+                            logger.warning(f"Failed to calculate travel time to lunch: {e}")
+                            block["travel_from_previous"] = 10
+                    else:
+                        block["travel_from_previous"] = 0
+                    continue
+                
+                # Calculate travel time for regular POIs
                 if all(coord is not None for coord in [prev_lat, prev_lon, curr_lat, curr_lon]):
                     try:
                         _, travel_time_min = calculate_distance(

@@ -28,6 +28,7 @@ Extract the following information:
   - pace: "relaxed", "moderate", or "fast"
   - interests: List of interests (e.g., ["views", "food", "art", "history"])
   - constraints: List of constraints (e.g., ["avoid long walks", "no early mornings"])
+  - food_preferences: List of specific food preferences (e.g., ["pizza", "sushi", "vegetarian"])
 
 Output ONLY valid JSON matching this schema:
 {
@@ -39,9 +40,17 @@ Output ONLY valid JSON matching this schema:
   "prefs": {
     "pace": "relaxed|moderate|fast",
     "interests": ["string"],
-    "constraints": ["string"]
+    "constraints": ["string"],
+    "food_preferences": ["string"]
   }
 }
+
+CRITICAL DATE PARSING RULES:
+- "5 days" means 5 nights (not 5 total days including arrival/departure)
+- "Dec 20-25" means start Dec 20, end Dec 25 = 5 nights
+- "Dec 20-24" means start Dec 20, end Dec 24 = 4 nights
+- If user says "X days" and provides date range, use the date range to calculate nights
+- nights = (end_date - start_date) in days
 
 Examples:
 Input: "5 days in NYC from Buffalo, Dec 20-25, with a teen, love views & pizza"
@@ -54,7 +63,8 @@ Output: {
   "prefs": {
     "pace": "moderate",
     "interests": ["views", "food"],
-    "constraints": []
+    "constraints": [],
+    "food_preferences": ["pizza"]
   }
 }
 
@@ -68,7 +78,23 @@ Output: {
   "prefs": {
     "pace": "relaxed",
     "interests": ["museums", "cafes", "art"],
-    "constraints": []
+    "constraints": [],
+    "food_preferences": []
+  }
+}
+
+Input: "3 days in Tokyo, love sushi and ramen"
+Output: {
+  "city": "Tokyo, Japan",
+  "origin": null,
+  "start_date": "2025-11-15",
+  "nights": 3,
+  "party": {"adults": 1, "children": 0, "teens": 0},
+  "prefs": {
+    "pace": "moderate",
+    "interests": ["food", "culture"],
+    "constraints": [],
+    "food_preferences": ["sushi", "ramen"]
   }
 }
 
@@ -118,6 +144,10 @@ def validate_intent_json(intent_data: Dict[str, Any]) -> Tuple[bool, Optional[st
             return False, "Missing prefs.constraints field"
         if not isinstance(prefs["constraints"], list):
             return False, "prefs.constraints must be a list"
+        
+        # food_preferences is optional but must be a list if present
+        if "food_preferences" in prefs and not isinstance(prefs["food_preferences"], list):
+            return False, "prefs.food_preferences must be a list"
         
         # Validate data types
         if not isinstance(intent_data["city"], str) or not intent_data["city"]:
