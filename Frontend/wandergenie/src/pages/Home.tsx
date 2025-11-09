@@ -76,11 +76,11 @@ export default function Home() {
 
       <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-8">
         <header className="space-y-4 rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-indigo-900/10 backdrop-blur">
-          <div className="flex flex-col gap-4 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
-            <p className="text-3xl font-black uppercase tracking-[0.55em] text-white sm:text-4xl">
+          <div className="flex flex-col gap-3 text-center sm:gap-4 sm:text-left lg:flex-row lg:items-center lg:justify-between">
+            <p className="break-words text-2xl font-black uppercase tracking-[0.3em] text-white sm:text-4xl sm:tracking-[0.55em]">
               WanderGenie
             </p>
-            <span className="self-center rounded-full border border-white/20 px-4 py-1 text-[0.70rem] font-semibold uppercase tracking-[0.5em] text-white/80 lg:self-auto">
+            <span className="w-full rounded-full border border-white/20 px-4 py-1 text-center text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white/80 sm:w-auto sm:tracking-[0.5em]">
               Live itinerary · Updated in seconds
             </span>
           </div>

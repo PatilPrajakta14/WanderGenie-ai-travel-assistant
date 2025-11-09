@@ -20,7 +20,7 @@ def build_flight_link(
     return_date: str = None
 ) -> str:
     """
-    Generate a flight booking link using LLM web search.
+    Generate a Google Flights booking link with proper parameters.
     
     Args:
         origin: Origin city or airport code
@@ -29,35 +29,32 @@ def build_flight_link(
         return_date: Optional return date in YYYY-MM-DD format
         
     Returns:
-        URL string for flight booking search
+        URL string for Google Flights search
     """
     try:
-        # Try to use web search for accurate links
-        from backend.tools.web_search import search_flight_booking_link
+        # Format dates for Google Flights (remove hyphens)
+        dep_date = start_date.replace("-", "")
         
+        # Build Google Flights URL
+        # Format: https://www.google.com/travel/flights?q=Flights%20from%20{origin}%20to%20{destination}%20on%20{date}
         if return_date:
-            url = search_flight_booking_link(origin, destination, start_date, return_date)
+            ret_date = return_date.replace("-", "")
+            # Round trip
+            query = f"Flights from {origin} to {destination} departing {start_date} returning {return_date}"
         else:
-            # If no return date, assume one-way
-            url = search_flight_booking_link(origin, destination, start_date, start_date)
-        
-        logger.info(f"Generated flight link via web search: {url}")
-        return url
-        
-    except Exception as e:
-        logger.warning(f"Web search failed, using fallback: {e}")
-        
-        # Fallback to Google Flights
-        if return_date:
-            query = f"Flights from {origin} to {destination} on {start_date} returning {return_date}"
-        else:
+            # One way
             query = f"Flights from {origin} to {destination} on {start_date}"
         
         params = {"q": query}
         url = f"https://www.google.com/travel/flights?{urlencode(params)}"
         
-        logger.info(f"Generated flight link (fallback): {url}")
+        logger.info(f"Generated Google Flights link: {url}")
         return url
+        
+    except Exception as e:
+        logger.error(f"Failed to generate flight link: {e}")
+        # Ultimate fallback - just Google Flights homepage
+        return "https://www.google.com/travel/flights"
 
 
 def build_hotel_link(
@@ -67,7 +64,8 @@ def build_hotel_link(
     party: Dict[str, int]
 ) -> str:
     """
-    Generate a hotel booking link using LLM web search.
+    Generate a Booking.com link with proper date parameters.
+    Google Hotels has issues with date parsing, so using Booking.com instead.
     
     Args:
         city: Destination city
@@ -76,37 +74,47 @@ def build_hotel_link(
         party: Party composition dict with adults, children, teens
         
     Returns:
-        URL string for hotel booking search
+        URL string for Booking.com search
     """
     try:
-        # Calculate check-out date
+        # Parse check-in date
         check_in_dt = datetime.strptime(check_in, "%Y-%m-%d")
         check_out_dt = check_in_dt + timedelta(days=nights)
-        check_out = check_out_dt.strftime("%Y-%m-%d")
+        
+        # Booking.com uses separate year, month, day parameters
+        checkin_year = check_in_dt.year
+        checkin_month = check_in_dt.month
+        checkin_day = check_in_dt.day
+        
+        checkout_year = check_out_dt.year
+        checkout_month = check_out_dt.month
+        checkout_day = check_out_dt.day
         
         # Calculate total guests
         adults = party.get("adults", 1)
         children = party.get("children", 0)
-        teens = party.get("teens", 0)
         
-        # Teens count as adults for hotel booking
-        total_guests = adults + teens + children
+        # Build Booking.com URL with proper parameters
+        params = {
+            "ss": city,  # Search string (destination)
+            "checkin_year": checkin_year,
+            "checkin_month": checkin_month,
+            "checkin_monthday": checkin_day,
+            "checkout_year": checkout_year,
+            "checkout_month": checkout_month,
+            "checkout_monthday": checkout_day,
+            "group_adults": adults,
+            "group_children": children,
+            "no_rooms": 1
+        }
         
-        # Try to use web search for accurate links
-        from backend.tools.web_search import search_hotel_booking_link
+        url = f"https://www.booking.com/searchresults.html?{urlencode(params)}"
         
-        url = search_hotel_booking_link(city, check_in, check_out, total_guests)
-        
-        logger.info(f"Generated hotel link via web search: {url}")
+        logger.info(f"Generated Booking.com link: {url}")
         return url
         
     except Exception as e:
-        logger.warning(f"Web search failed, using fallback: {e}")
-        
-        # Fallback to Google Hotels
-        query = f"Hotels in {city}"
-        params = {"q": query}
-        url = f"https://www.google.com/travel/hotels?{urlencode(params)}"
-        
-        logger.info(f"Generated hotel link (fallback): {url}")
-        return url
+        logger.error(f"Failed to generate hotel link: {e}")
+        # Fallback to simple Booking.com search
+        params = {"ss": city}
+        return f"https://www.booking.com/searchresults.html?{urlencode(params)}"
