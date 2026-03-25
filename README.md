@@ -218,10 +218,10 @@ WanderGenie-ai-travel-assistant/
 ## 🤝 Team
 
 **UB Hacking 2025 - Team WanderGenie**
-- Sweta Sahu - LLM/Agent Lead
-- Gautam Arora - Backend/API Lead
-- Arpit Sharma - Frontend Lead
-- Prajakta Patil - DevOps/Data Lead
+- Arpit Sharma
+- Prajakta Patil
+- Sweta Sahu
+- Gautam Arora
 
 **GitHub**: https://github.com/PatilPrajakta14/WanderGenie-ai-travel-assistant
 
